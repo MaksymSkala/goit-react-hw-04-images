@@ -11,7 +11,6 @@ function App() {
   const [images, setImages] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [setError] = useState(null);
   const [largeImageURL, setLargeImageURL] = useState('');
   const [hasMoreImages, setHasMoreImages] = useState(true);
 
