@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { Component } from 'react';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import Modal from './Modal/Modal';
@@ -6,61 +6,79 @@ import Loader from './Loader/Loader';
 import { fetchImages } from '../Api/api';
 import './App.css';
 
-function App() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [images, setImages] = useState([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [largeImageURL, setLargeImageURL] = useState('');
-  const [hasMoreImages, setHasMoreImages] = useState(true);
+class App extends Component {
+  state = {
+    searchQuery: '',
+    images: [],
+    page: 1,
+    loading: false,
+    error: null,
+    largeImageURL: '',
+    hasMoreImages: true,
+  };
 
-  useEffect(() => {
-    if (searchQuery !== '') {
-      fetchImages(searchQuery, page)
-        .then((data) => {
-          if (data.hits.length === 0) {
-            setHasMoreImages(false);
-          } else {
-            setImages((prevImages) => [...prevImages, ...data.hits]);
-            setPage((prevPage) => prevPage + 1);
-          }
-        })
-        .catch((error) => setError(error))
-        .finally(() => setLoading(false));
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.searchQuery !== this.state.searchQuery) {
+      this.fetchImages();
     }
-  }, [searchQuery, page]);
+  }
 
-  const handleSearchFormSubmit = (query) => {
-    setSearchQuery(query);
-    setPage(1);
-    setImages([]);
-    setHasMoreImages(true);
+  fetchImages = () => {
+    const { searchQuery, page, hasMoreImages } = this.state;
+
+    if (!hasMoreImages) {
+      return;
+    }
+
+    this.setState({ loading: true });
+
+    fetchImages(searchQuery, page)
+      .then((data) => {
+        if (data.hits.length === 0) {
+          this.setState({ hasMoreImages: false });
+        } else {
+          this.setState((prevState) => ({
+            images: [...prevState.images, ...data.hits],
+            page: prevState.page + 1,
+          }));
+        }
+      })
+      .catch((error) => this.setState({ error }))
+      .finally(() => this.setState({ loading: false }));
   };
 
-  const handleImageClick = (largeImageURL) => {
-    setLargeImageURL(largeImageURL);
+  handleSearchFormSubmit = (query) => {
+    this.setState({ searchQuery: query, page: 1, images: [], hasMoreImages: true });
   };
 
-  const handleCloseModal = () => {
-    setLargeImageURL('');
+  handleImageClick = (largeImageURL) => {
+    this.setState({ largeImageURL });
   };
 
-  return (
-    <div>
-      <Searchbar onSubmit={handleSearchFormSubmit} />
-      {loading && <Loader />}
-      {images.length > 0 && (
-        <ImageGallery images={images} onClick={handleImageClick} />
-      )}
-      {hasMoreImages && images.length > 0 && images.length % 12 === 0 && !loading && (
-        <button type="button" className="button" onClick={() => setPage(page + 1)}>
-          Load more
-        </button>
-      )}
-      {largeImageURL && <Modal image={largeImageURL} onClose={handleCloseModal} />}
-    </div>
-  );
+  handleCloseModal = () => {
+    this.setState({ largeImageURL: '' });
+  };
+
+  render() {
+    const { images, loading, largeImageURL, hasMoreImages } = this.state;
+    return (
+      <div>
+        <Searchbar onSubmit={this.handleSearchFormSubmit} />
+        {loading && <Loader />}
+        {images.length > 0 && (
+          <ImageGallery images={images} onClick={this.handleImageClick} />
+        )}
+        {hasMoreImages && images.length > 0 && images.length % 12 === 0 && !loading && (
+          <button type="button" className="button" onClick={this.fetchImages}>
+            Load more
+          </button>
+        )}
+        {largeImageURL && (
+          <Modal image={largeImageURL} onClose={this.handleCloseModal} />
+        )}
+      </div>
+    );
+  }
 }
 
 export default App;
