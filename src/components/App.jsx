@@ -16,7 +16,7 @@ function App() {
   const [hasMoreImages, setHasMoreImages] = useState(true);
 
   useEffect(() => {
-    if (searchQuery) {
+    if (searchQuery !== '') {
       fetchImages(searchQuery, page)
         .then((data) => {
           if (data.hits.length === 0) {
@@ -33,8 +33,8 @@ function App() {
 
   const handleSearchFormSubmit = (query) => {
     setSearchQuery(query);
-    setImages([]);
     setPage(1);
+    setImages([]);
     setHasMoreImages(true);
   };
 
